@@ -1,5 +1,6 @@
 .npmrc
+.idea
 npm-debug.log
 node_modules
 dist
-es
+yarn.lock

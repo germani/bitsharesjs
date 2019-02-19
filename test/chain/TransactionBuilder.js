@@ -1,5 +1,5 @@
 import assert from "assert";
-import {Apis} from "bitsharesjs-ws";
+import {Apis} from "bitsharesjs-ws-mes";
 import {TransactionBuilder, ops} from "../../lib";
 
 describe("TransactionBuilder", () => {
@@ -60,8 +60,7 @@ describe("TransactionBuilder", () => {
                 }
             });
 
-            tr
-                .set_required_fees()
+            tr.set_required_fees()
                 .then(() => {
                     assert.equal(tr.operations[0][1].fee.asset_id, "1.3.0");
                     assert(tr.operations[0][1].fee.amount > 0);
@@ -90,8 +89,7 @@ describe("TransactionBuilder", () => {
                 }
             });
 
-            tr
-                .set_required_fees()
+            tr.set_required_fees()
                 .then(() => {
                     assert.equal(tr.operations[0][1].fee.asset_id, "1.3.121");
                     assert(tr.operations[0][1].fee.amount > 0);
@@ -120,8 +118,7 @@ describe("TransactionBuilder", () => {
                 }
             });
 
-            tr
-                .set_required_fees()
+            tr.set_required_fees()
                 .then(() => {
                     assert.equal(tr.operations[0][1].fee.asset_id, "1.3.0");
                     assert(tr.operations[0][1].fee.amount > 0);
@@ -207,8 +204,7 @@ describe("TransactionBuilder", () => {
                 upgrade_to_lifetime_member: true
             });
 
-            tr
-                .set_required_fees()
+            tr.set_required_fees()
                 .then(() => {
                     assert.equal(tr.operations[0][1].fee.asset_id, "1.3.121");
                     assert.equal(tr.operations[1][1].fee.asset_id, "1.3.113");
@@ -259,8 +255,7 @@ describe("TransactionBuilder", () => {
                 }
             });
 
-            tr
-                .set_required_fees()
+            tr.set_required_fees()
                 .then(() => {
                     assert.equal(
                         tr.operations[0][1].proposed_ops[0].op[1].fee.asset_id,
@@ -309,18 +304,17 @@ describe("TransactionBuilder", () => {
                 }
             });
 
-            tr
-                .set_required_fees()
+            tr.set_required_fees()
                 .then(() => {
                     assert.equal(tr.operations[0][1].fee.asset_id, "1.3.0");
 
                     /*
-                    * This test might break as fee pools are replenished, check and
-                    * update assets used if necessary. At least one asset should
-                    * have an insufficient pool balance, and one should have a
-                    * sufficient pool balance. The current iteration assumes the
-                    * asset 1.3.125 has an insufficient fee pool balance
-                    */
+                     * This test might break as fee pools are replenished, check and
+                     * update assets used if necessary. At least one asset should
+                     * have an insufficient pool balance, and one should have a
+                     * sufficient pool balance. The current iteration assumes the
+                     * asset 1.3.125 has an insufficient fee pool balance
+                     */
                     tr.operations[0][1].proposed_ops.forEach((prop, index) => {
                         if (index === 1)
                             // asset "1.3.125 with insufficient fee pool balance"

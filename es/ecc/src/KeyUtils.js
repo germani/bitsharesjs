@@ -6,25 +6,23 @@ import {sha256, sha512} from "./hash";
 // import dictionary from './dictionary_en';
 import secureRandom from "secure-random";
 import {ChainConfig} from "bitsharesjs-ws-mes";
-const Buffer = require("safe-buffer").Buffer;
+var Buffer = require("safe-buffer").Buffer;
 
 // hash for .25 second
 var HASH_POWER_MILLS = 250;
 
-const key = {
+var key = {
     /** Uses 1 second of hashing power to create a key/password checksum.  An
     implementation can re-call this method with the same password to re-match
     the strength of the CPU (either after moving from a desktop to a mobile,
     mobile to desktop, or N years from now when CPUs are presumably stronger).
-
-    A salt is used for all the normal reasons...
-
-    @return object {
+     A salt is used for all the normal reasons...
+     @return object {
         aes_private: Aes,
         checksum: "{hash_iteration_count},{salt},{checksum}"
     }
     */
-    aes_checksum(password) {
+    aes_checksum: function aes_checksum(password) {
         if (!(typeof password === "string")) {
             throw new "password string required"();
         }
@@ -56,8 +54,12 @@ const key = {
     much more or less than 1 second to return, one should consider updating
     all encyrpted fields using a new key.key_checksum.
     */
-    aes_private(password, key_checksum) {
-        var [iterations, salt, checksum] = key_checksum.split(",");
+    aes_private: function aes_private(password, key_checksum) {
+        var _key_checksum$split = key_checksum.split(","),
+            iterations = _key_checksum$split[0],
+            salt = _key_checksum$split[1],
+            checksum = _key_checksum$split[2];
+
         var secret = salt + password;
         for (
             var i = 0;
@@ -75,10 +77,14 @@ const key = {
 
     /**
         A week random number generator can run out of entropy.  This should ensure even the worst random number implementation will be reasonably safe.
-
-        @param1 string entropy of at least 32 bytes
+         @param1 string entropy of at least 32 bytes
     */
-    random32ByteBuffer(entropy = this.browserEntropy()) {
+    random32ByteBuffer: function random32ByteBuffer() {
+        var entropy =
+            arguments.length > 0 && arguments[0] !== undefined
+                ? arguments[0]
+                : this.browserEntropy();
+
         if (!(typeof entropy === "string")) {
             throw new Error("string required for entropy");
         }
@@ -89,9 +95,9 @@ const key = {
 
         var start_t = Date.now();
 
-        while (Date.now() - start_t < HASH_POWER_MILLS)
+        while (Date.now() - start_t < HASH_POWER_MILLS) {
             entropy = sha256(entropy);
-
+        }
         var hash_array = [];
         hash_array.push(entropy);
 
@@ -101,10 +107,16 @@ const key = {
         return sha256(Buffer.concat(hash_array));
     },
 
-    suggest_brain_key: function(
-        dictionary = ",",
-        entropy = this.browserEntropy()
-    ) {
+    suggest_brain_key: function suggest_brain_key() {
+        var dictionary =
+            arguments.length > 0 && arguments[0] !== undefined
+                ? arguments[0]
+                : ",";
+        var entropy =
+            arguments.length > 1 && arguments[1] !== undefined
+                ? arguments[1]
+                : this.browserEntropy();
+
         var randomBuffer = this.random32ByteBuffer(entropy);
 
         var word_count = 16;
@@ -112,16 +124,18 @@ const key = {
 
         if (!(dictionary_lines.length === 49744)) {
             throw new Error(
-                `expecting ${49744} but got ${
-                    dictionary_lines.length
-                } dictionary words`
+                "expecting " +
+                    49744 +
+                    " but got " +
+                    dictionary_lines.length +
+                    " dictionary words"
             );
         }
 
         var brainkey = [];
         var end = word_count * 2;
 
-        for (let i = 0; i < end; i += 2) {
+        for (var i = 0; i < end; i += 2) {
             // randomBuffer has 256 bits / 16 bits per word == 16 words
             var num = (randomBuffer[i] << 8) + randomBuffer[i + 1];
 
@@ -134,11 +148,15 @@ const key = {
         return this.normalize_brainKey(brainkey.join(" "));
     },
 
-    get_random_key(entropy) {
+    get_random_key: function get_random_key(entropy) {
         return PrivateKey.fromBuffer(this.random32ByteBuffer(entropy));
     },
+    get_brainPrivateKey: function get_brainPrivateKey(brainKey) {
+        var sequence =
+            arguments.length > 1 && arguments[1] !== undefined
+                ? arguments[1]
+                : 0;
 
-    get_brainPrivateKey(brainKey, sequence = 0) {
         if (sequence < 0) {
             throw new Error("invalid sequence");
         }
@@ -150,7 +168,7 @@ const key = {
     },
 
     // Turn invisible space like characters into a single space
-    normalize_brainKey(brainKey) {
+    normalize_brainKey: function normalize_brainKey(brainKey) {
         if (!(typeof brainKey === "string")) {
             throw new Error("string required for brainKey");
         }
@@ -161,8 +179,7 @@ const key = {
         }
         return brainKey.split(/[\t\n\v\f\r ]+/).join(" ");
     },
-
-    browserEntropy() {
+    browserEntropy: function browserEntropy() {
         var entropyStr = "";
         try {
             entropyStr =
@@ -208,7 +225,12 @@ const key = {
     },
 
     // @return array of 5 legacy addresses for a pubkey string parameter.
-    addresses(pubkey, address_prefix = ChainConfig.address_prefix) {
+    addresses: function addresses(pubkey) {
+        var address_prefix =
+            arguments.length > 1 && arguments[1] !== undefined
+                ? arguments[1]
+                : ChainConfig.address_prefix;
+
         var public_key = PublicKey.fromPublicKeyString(pubkey, address_prefix);
         // S L O W
         var address_string = [

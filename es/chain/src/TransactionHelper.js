@@ -10,7 +10,7 @@ import {Apis} from "bitsharesjs-ws-mes";
 
 helper.unique_nonce_entropy = null;
 helper.unique_nonce_uint64 = function() {
-    var entropy = (helper.unique_nonce_entropy = (() => {
+    var entropy = (helper.unique_nonce_entropy = (function() {
         if (helper.unique_nonce_entropy === null) {
             //console.log('... secureRandom.randomUint8Array(1)[0]',secureRandom.randomUint8Array(1)[0])
             return parseInt(secureRandom.randomUint8Array(1)[0]);
@@ -27,7 +27,12 @@ helper.unique_nonce_uint64 = function() {
 };
 
 /* Todo, set fees */
-helper.to_json = function(tr, broadcast = false) {
+helper.to_json = function(tr) {
+    var broadcast =
+        arguments.length > 1 && arguments[1] !== undefined
+            ? arguments[1]
+            : false;
+
     return (function(tr, broadcast) {
         var tr_object = ops.signed_transaction.toObject(tr);
         if (broadcast) {
@@ -43,7 +48,7 @@ helper.to_json = function(tr, broadcast = false) {
 helper.signed_tr_json = function(tr, private_keys) {
     var tr_buffer = ops.transaction.toBuffer(tr);
     tr = ops.transaction.toObject(tr);
-    tr.signatures = (() => {
+    tr.signatures = (function() {
         var result = [];
         for (
             var i = 0;
@@ -72,14 +77,17 @@ helper.seconds_from_now = function(timeout_sec) {
     Print to the console a JSON representation of any object in
     @graphene/serializer { types }
 */
-helper.template = function(
-    serializer_operation_type_name,
-    debug = {use_default: true, annotate: true}
-) {
+helper.template = function(serializer_operation_type_name) {
+    var debug =
+        arguments.length > 1 && arguments[1] !== undefined
+            ? arguments[1]
+            : {use_default: true, annotate: true};
+
     var so = ops[serializer_operation_type_name];
     if (!so) {
         throw new Error(
-            `unknown serializer_operation_type ${serializer_operation_type_name}`
+            "unknown serializer_operation_type " +
+                serializer_operation_type_name
         );
     }
     return so.toObject(undefined, debug);
@@ -89,7 +97,8 @@ helper.new_operation = function(serializer_operation_type_name) {
     var so = ops[serializer_operation_type_name];
     if (!so) {
         throw new Error(
-            `unknown serializer_operation_type ${serializer_operation_type_name}`
+            "unknown serializer_operation_type " +
+                serializer_operation_type_name
         );
     }
     var object = so.toObject(undefined, {use_default: true, annotate: true});

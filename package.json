@@ -1,6 +1,6 @@
 {
-    "name": "bitsharesjs",
-    "version": "1.8.3",
+    "name": "bitsharesjs-mes",
+    "version": "1.8.5",
     "description": "Pure JavaScript Bitshares library for node.js and browsers.",
     "browser": {
         "ws": false,
@@ -21,7 +21,7 @@
         "build:watch": "babel lib -d dist --watch",
         "prebrowserify": "mkdirp build",
         "browserify": "cross-env NODE_ENV=production browserify --full-paths dist/browser.js --standalone bitshares_js -o build/bitsharesjs.js -d",
-        "postbrowserify": "cross-env NODE_ENV=production uglifyjs --compress --mangle --sequences --drop_console --output build/bitsharesjs.min.js -- build/bitsharesjs.js",
+        "postbrowserify": "cross-env NODE_ENV=production terser --compress --mangle --sequences --drop_console --output build/bitsharesjs.min.js -- build/bitsharesjs.js",
         "precommit": "pretty-quick --staged && npm run test",
         "prepublish": "npm run build && npm run test",
         "doc": "esdoc -c esdoc.json",
@@ -52,7 +52,7 @@
     "jsnext:main": "./es/index.js",
     "dependencies": {
         "bigi": "1.4.2",
-        "bitsharesjs-ws": "1.5.4",
+        "bitsharesjs-ws-mes": "germani/bitsharesjs-ws-mes",
         "bs58": "4.0.1",
         "bytebuffer": "5.0.1",
         "create-hash": "1.2.0",
@@ -83,6 +83,7 @@
         "prettier": "^1.11.1",
         "pretty-quick": "^1.4.1",
         "rimraf": "^2.6.1",
+        "terser": "^3.16.1",
         "uglify-js": "^3.3.10"
     }
 }

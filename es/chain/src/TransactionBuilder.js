@@ -1,14 +1,22 @@
+function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+        throw new TypeError("Cannot call a class as a function");
+    }
+}
+
 import assert from "assert";
 import {Signature, PublicKey, hash} from "../../ecc";
 import {ops} from "../../serializer";
 import {Apis, ChainConfig} from "bitsharesjs-ws-mes";
 import ChainTypes from "./ChainTypes";
-const Buffer = require("safe-buffer").Buffer;
+var Buffer = require("safe-buffer").Buffer;
 
 var head_block_time_string, committee_min_review;
 
-class TransactionBuilder {
-    constructor() {
+var TransactionBuilder = (function() {
+    function TransactionBuilder() {
+        _classCallCheck(this, TransactionBuilder);
+
         this.ref_block_num = 0;
         this.ref_block_prefix = 0;
         this.expiration = 0;
@@ -24,22 +32,37 @@ class TransactionBuilder {
         @arg {string} name - like "transfer"
         @arg {object} operation - JSON matchching the operation's format
     */
-    add_type_operation(name, operation) {
+
+    TransactionBuilder.prototype.add_type_operation = function add_type_operation(
+        name,
+        operation
+    ) {
         this.add_operation(this.get_type_operation(name, operation));
         return;
-    }
+    };
 
     /**
         This does it all: set fees, finalize, sign, and broadcast (if wanted).
-
-        @arg {ConfidentialWallet} cwallet - must be unlocked, used to gather signing keys
-
-        @arg {array<string>} [signer_pubkeys = null] - Optional ["GPHAbc9Def0...", ...].  These are additional signing keys.  Some balance claims require propritary address formats, the witness node can't tell us which ones are needed so they must be passed in.  If the witness node can figure out a signing key (mostly all other transactions), it should not be passed in here.
-
-        @arg {boolean} [broadcast = false]
+         @arg {ConfidentialWallet} cwallet - must be unlocked, used to gather signing keys
+         @arg {array<string>} [signer_pubkeys = null] - Optional ["GPHAbc9Def0...", ...].  These are additional signing keys.  Some balance claims require propritary address formats, the witness node can't tell us which ones are needed so they must be passed in.  If the witness node can figure out a signing key (mostly all other transactions), it should not be passed in here.
+         @arg {boolean} [broadcast = false]
     */
-    process_transaction(cwallet, signer_pubkeys = null, broadcast = false) {
-        let wallet_object = cwallet.wallet.wallet_object;
+
+    TransactionBuilder.prototype.process_transaction = function process_transaction(
+        cwallet
+    ) {
+        var _this = this;
+
+        var signer_pubkeys =
+            arguments.length > 1 && arguments[1] !== undefined
+                ? arguments[1]
+                : null;
+        var broadcast =
+            arguments.length > 2 && arguments[2] !== undefined
+                ? arguments[2]
+                : false;
+
+        var wallet_object = cwallet.wallet.wallet_object;
         if (Apis.instance().chain_id !== wallet_object.get("chain_id"))
             return Promise.reject(
                 "Mismatched chain_id; expecting " +
@@ -48,7 +71,7 @@ class TransactionBuilder {
                     Apis.instance().chain_id
             );
 
-        return this.set_required_fees().then(() => {
+        return this.set_required_fees().then(function() {
             var signer_pubkeys_added = {};
             if (signer_pubkeys) {
                 // Balance claims are by address, only the private
@@ -59,15 +82,41 @@ class TransactionBuilder {
                 );
                 if (!pubkeys.length) throw new Error("Missing signing key");
 
-                for (let pubkey_string of pubkeys) {
+                for (
+                    var _iterator = pubkeys,
+                        _isArray = Array.isArray(_iterator),
+                        _i = 0,
+                        _iterator = _isArray
+                            ? _iterator
+                            : _iterator[Symbol.iterator]();
+                    ;
+
+                ) {
+                    var _ref;
+
+                    if (_isArray) {
+                        if (_i >= _iterator.length) break;
+                        _ref = _iterator[_i++];
+                    } else {
+                        _i = _iterator.next();
+                        if (_i.done) break;
+                        _ref = _i.value;
+                    }
+
+                    var pubkey_string = _ref;
+
                     var private_key = cwallet.getPrivateKey(pubkey_string);
-                    this.add_signer(private_key, pubkey_string);
+                    _this.add_signer(private_key, pubkey_string);
                     signer_pubkeys_added[pubkey_string] = true;
                 }
             }
 
-            return this.get_potential_signatures()
-                .then(({pubkeys, addys}) => {
+            return _this
+                .get_potential_signatures()
+                .then(function(_ref2) {
+                    var pubkeys = _ref2.pubkeys,
+                        addys = _ref2.addys;
+
                     var my_pubkeys = cwallet.getPubkeys_having_PrivateKey(
                         pubkeys,
                         addys
@@ -81,34 +130,61 @@ class TransactionBuilder {
                     //        console.log('get_required_signatures normal\t',required_pubkey_strings.sort(), pubkeys))
                     //}
 
-                    return this.get_required_signatures(my_pubkeys).then(
-                        required_pubkeys => {
-                            for (let pubkey_string of required_pubkeys) {
-                                if (signer_pubkeys_added[pubkey_string])
+                    return _this
+                        .get_required_signatures(my_pubkeys)
+                        .then(function(required_pubkeys) {
+                            for (
+                                var _iterator2 = required_pubkeys,
+                                    _isArray2 = Array.isArray(_iterator2),
+                                    _i2 = 0,
+                                    _iterator2 = _isArray2
+                                        ? _iterator2
+                                        : _iterator2[Symbol.iterator]();
+                                ;
+
+                            ) {
+                                var _ref3;
+
+                                if (_isArray2) {
+                                    if (_i2 >= _iterator2.length) break;
+                                    _ref3 = _iterator2[_i2++];
+                                } else {
+                                    _i2 = _iterator2.next();
+                                    if (_i2.done) break;
+                                    _ref3 = _i2.value;
+                                }
+
+                                var _pubkey_string = _ref3;
+
+                                if (signer_pubkeys_added[_pubkey_string])
                                     continue;
                                 var private_key = cwallet.getPrivateKey(
-                                    pubkey_string
+                                    _pubkey_string
                                 );
                                 if (!private_key)
                                     // This should not happen, get_required_signatures will only
                                     // returned keys from my_pubkeys
                                     throw new Error(
                                         "Missing signing key for " +
-                                            pubkey_string
+                                            _pubkey_string
                                     );
-                                this.add_signer(private_key, pubkey_string);
+                                _this.add_signer(private_key, _pubkey_string);
                             }
-                        }
-                    );
+                        });
                 })
-                .then(() => (broadcast ? this.broadcast() : this.serialize()));
+                .then(function() {
+                    return broadcast ? _this.broadcast() : _this.serialize();
+                });
         });
-    }
+    };
 
     /** Typically this is called automatically just prior to signing.  Once finalized this transaction can not be changed. */
-    finalize() {
-        return new Promise((resolve, reject) => {
-            if (this.tr_buffer) {
+
+    TransactionBuilder.prototype.finalize = function finalize() {
+        var _this2 = this;
+
+        return new Promise(function(resolve, reject) {
+            if (_this2.tr_buffer) {
                 throw new Error("already finalized");
             }
 
@@ -116,34 +192,35 @@ class TransactionBuilder {
                 Apis.instance()
                     .db_api()
                     .exec("get_objects", [["2.1.0"]])
-                    .then(r => {
+                    .then(function(r) {
                         head_block_time_string = r[0].time;
-                        if (this.expiration === 0)
-                            this.expiration =
+                        if (_this2.expiration === 0)
+                            _this2.expiration =
                                 base_expiration_sec() +
                                 ChainConfig.expire_in_secs;
-                        this.ref_block_num = r[0].head_block_number & 0xffff;
-                        this.ref_block_prefix = new Buffer(
+                        _this2.ref_block_num = r[0].head_block_number & 0xffff;
+                        _this2.ref_block_prefix = new Buffer(
                             r[0].head_block_id,
                             "hex"
                         ).readUInt32LE(4);
                         //DEBUG console.log("ref_block",@ref_block_num,@ref_block_prefix,r)
 
-                        var iterable = this.operations;
+                        var iterable = _this2.operations;
                         for (var i = 0, op; i < iterable.length; i++) {
                             op = iterable[i];
                             if (op[1]["finalize"]) {
                                 op[1].finalize();
                             }
                         }
-                        this.tr_buffer = ops.transaction.toBuffer(this);
+                        _this2.tr_buffer = ops.transaction.toBuffer(_this2);
                     })
             );
         });
-    }
+    };
 
     /** @return {string} hex transaction ID */
-    id() {
+
+    TransactionBuilder.prototype.id = function id() {
         if (!this.tr_buffer) {
             throw new Error("not finalized");
         }
@@ -151,13 +228,16 @@ class TransactionBuilder {
             .sha256(this.tr_buffer)
             .toString("hex")
             .substring(0, 40);
-    }
+    };
 
     /**
         Typically one will use {@link this.add_type_operation} instead.
         @arg {array} operation - [operation_id, operation]
     */
-    add_operation(operation) {
+
+    TransactionBuilder.prototype.add_operation = function add_operation(
+        operation
+    ) {
         if (this.tr_buffer) {
             throw new Error("already finalized");
         }
@@ -167,19 +247,22 @@ class TransactionBuilder {
         }
         this.operations.push(operation);
         return;
-    }
+    };
 
-    get_type_operation(name, operation) {
+    TransactionBuilder.prototype.get_type_operation = function get_type_operation(
+        name,
+        operation
+    ) {
         if (this.tr_buffer) {
             throw new Error("already finalized");
         }
         assert(name, "name");
         assert(operation, "operation");
         var _type = ops[name];
-        assert(_type, `Unknown operation ${name}`);
+        assert(_type, "Unknown operation " + name);
         var operation_id = ChainTypes.operations[_type.operation_name];
         if (operation_id === undefined) {
-            throw new Error(`unknown operation: ${_type.operation_name}`);
+            throw new Error("unknown operation: " + _type.operation_name);
         }
         if (!operation.fee) {
             operation.fee = {amount: 0, asset_id: 0};
@@ -189,19 +272,21 @@ class TransactionBuilder {
              * Proposals involving the committee account require a review
              * period to be set, look for them here
              */
-            let requiresReview = false,
+            var requiresReview = false,
                 extraReview = 0;
-            operation.proposed_ops.forEach(op => {
-                const COMMITTE_ACCOUNT = 0;
-                let key;
+            operation.proposed_ops.forEach(function(op) {
+                var COMMITTE_ACCOUNT = 0;
+                var key = void 0;
 
                 switch (op.op[0]) {
-                    case 0: // transfer
+                    case 0:
+                        // transfer
                         key = "from";
                         break;
 
                     case 6: //account_update
-                    case 17: // asset_settle
+                    case 17:
+                        // asset_settle
                         key = "account";
                         break;
 
@@ -211,25 +296,30 @@ class TransactionBuilder {
                     case 13: // asset_update_feed_producers
                     case 14: // asset_issue
                     case 18: // asset_global_settle
-                    case 43: // asset_claim_fees
+                    case 43:
+                        // asset_claim_fees
                         key = "issuer";
                         break;
 
-                    case 15: // asset_reserve
+                    case 15:
+                        // asset_reserve
                         key = "payer";
                         break;
 
-                    case 16: // asset_fund_fee_pool
+                    case 16:
+                        // asset_fund_fee_pool
                         key = "from_account";
                         break;
 
                     case 22: // proposal_create
                     case 23: // proposal_update
-                    case 24: // proposal_delete
+                    case 24:
+                        // proposal_delete
                         key = "fee_paying_account";
                         break;
 
-                    case 31: // committee_member_update_global_parameters
+                    case 31:
+                        // committee_member_update_global_parameters
                         requiresReview = true;
                         extraReview = 60 * 60 * 24 * 13; // Make the review period 2 weeks total
                         break;
@@ -258,11 +348,11 @@ class TransactionBuilder {
         }
         var operation_instance = _type.fromObject(operation);
         return [operation_id, operation_instance];
-    }
+    };
 
     /* optional: fetch the current head block */
 
-    update_head_block() {
+    TransactionBuilder.prototype.update_head_block = function update_head_block() {
         return Promise.all([
             Apis.instance()
                 .db_api()
@@ -271,23 +361,31 @@ class TransactionBuilder {
                 .db_api()
                 .exec("get_objects", [["2.1.0"]])
         ]).then(function(res) {
-            let [g, r] = res;
+            var g = res[0],
+                r = res[1];
+
             head_block_time_string = r[0].time;
             committee_min_review =
                 g[0].parameters.committee_proposal_review_period;
         });
-    }
+    };
 
     /** optional: there is a deafult expiration */
-    set_expire_seconds(sec) {
+
+    TransactionBuilder.prototype.set_expire_seconds = function set_expire_seconds(
+        sec
+    ) {
         if (this.tr_buffer) {
             throw new Error("already finalized");
         }
         return (this.expiration = base_expiration_sec() + sec);
-    }
+    };
 
     /* Wraps this transaction in a proposal_create transaction */
-    propose(proposal_create_options) {
+
+    TransactionBuilder.prototype.propose = function propose(
+        proposal_create_options
+    ) {
         if (this.tr_buffer) {
             throw new Error("already finalized");
         }
@@ -301,7 +399,7 @@ class TransactionBuilder {
             "proposal_create_options.fee_paying_account"
         );
 
-        let proposed_ops = this.operations.map(op => {
+        var proposed_ops = this.operations.map(function(op) {
             return {op: op};
         });
 
@@ -311,10 +409,10 @@ class TransactionBuilder {
         proposal_create_options.proposed_ops = proposed_ops;
         this.add_type_operation("proposal_create", proposal_create_options);
         return this;
-    }
+    };
 
-    has_proposed_operation() {
-        let hasProposed = false;
+    TransactionBuilder.prototype.has_proposed_operation = function has_proposed_operation() {
+        var hasProposed = false;
         for (var i = 0; i < this.operations.length; i++) {
             if ("proposed_ops" in this.operations[i][1]) {
                 hasProposed = true;
@@ -323,10 +421,16 @@ class TransactionBuilder {
         }
 
         return hasProposed;
-    }
+    };
 
     /** optional: the fees can be obtained from the witness node */
-    set_required_fees(asset_id, removeDuplicates) {
+
+    TransactionBuilder.prototype.set_required_fees = function set_required_fees(
+        asset_id,
+        removeDuplicates
+    ) {
+        var _this3 = this;
+
         if (this.tr_buffer) {
             throw new Error("already finalized");
         }
@@ -338,14 +442,14 @@ class TransactionBuilder {
             return op[0] === 22;
         }
 
-        let operations = [];
-        let proposed_ops = [];
-        let feeAssets = [];
-        let proposalFeeAssets = [];
-        let potentialDuplicates = {};
+        var operations = [];
+        var proposed_ops = [];
+        var feeAssets = [];
+        var proposalFeeAssets = [];
+        var potentialDuplicates = {};
         function getDuplicateOriginalIndex(op, index) {
-            let key = getOperationKey(op);
-            let duplicate = potentialDuplicates[key];
+            var key = getOperationKey(op);
+            var duplicate = potentialDuplicates[key];
             if (!!duplicate) {
                 if (duplicate.original === index) return index;
                 else if (duplicate.duplicates.indexOf(index) !== -1) {
@@ -354,24 +458,25 @@ class TransactionBuilder {
             }
         }
         function getOperationKey(op) {
-            let key = null;
+            var key = null;
             switch (op[0]) {
-                case 0: // transfer
-                    let memoDummy = new Array(
+                case 0:
+                    // transfer
+                    var memoDummy = new Array(
                         op[1].memo.message.length + 1
                     ).join("a");
-                    key = `${op[0]}_${op[1].amount.asset_id}_${memoDummy}`;
+                    key = op[0] + "_" + op[1].amount.asset_id + "_" + memoDummy;
                     break;
                 default:
             }
             return key;
         }
-        for (let i = 0, op; i < this.operations.length; i++) {
+        for (var i = 0, op; i < this.operations.length; i++) {
             op = this.operations[i];
-            let opObject = ops.operation.toObject(op);
-            let isDuplicate = false;
+            var opObject = ops.operation.toObject(op);
+            var isDuplicate = false;
             if (removeDuplicates) {
-                let key = getOperationKey(opObject);
+                var key = getOperationKey(opObject);
                 if (key) {
                     if (!potentialDuplicates[key])
                         potentialDuplicates[key] = {
@@ -390,7 +495,7 @@ class TransactionBuilder {
              * proposals that will most likely fail due to empty fee pools
              */
             if (isProposal(op)) {
-                op[1].proposed_ops.forEach(proposal => {
+                op[1].proposed_ops.forEach(function(proposal) {
                     proposed_ops.push(proposal);
                     if (
                         proposalFeeAssets.indexOf(
@@ -410,7 +515,7 @@ class TransactionBuilder {
         }
 
         if (!asset_id) {
-            let op1_fee = operations[0][1].fee;
+            var op1_fee = operations[0][1].fee;
             if (op1_fee && op1_fee.asset_id !== null) {
                 asset_id = op1_fee.asset_id;
             } else {
@@ -423,19 +528,19 @@ class TransactionBuilder {
          * fees and dynamic objects
          */
         if (proposalFeeAssets.length) {
-            proposalFeeAssets.forEach(id => {
+            proposalFeeAssets.forEach(function(id) {
                 if (feeAssets.indexOf(id) === -1) feeAssets.push(id);
             });
         }
-        let promises = [];
+        var promises = [];
         promises.push(
             Promise.all(
-                feeAssets.map(id => {
+                feeAssets.map(function(id) {
                     return Apis.instance()
                         .db_api()
                         .exec("get_required_fees", [operations, id]);
                 })
-            ).catch(err => {
+            ).catch(function(err) {
                 console.error("get_required_fees API error: ", err.message);
             })
         );
@@ -447,7 +552,9 @@ class TransactionBuilder {
              * The dynamic asset object id is equal to the asset id but with
              * 2.3.x instead of 1.3.x
              */
-            let dynamicObjectIds = feeAssets.map(a => a.replace(/^1\./, "2."));
+            var dynamicObjectIds = feeAssets.map(function(a) {
+                return a.replace(/^1\./, "2.");
+            });
             promises.push(
                 Apis.instance()
                     .db_api()
@@ -460,17 +567,20 @@ class TransactionBuilder {
             );
         }
 
-        return Promise.all(promises).then(results => {
+        return Promise.all(promises).then(function(results) {
             /*
              * allFees and coreFees are arrays containg fee amounts grouped by
              * asset and for each operation in operations
              */
-            let [allFees, coreFees, dynamicObjects] = results;
+            var allFees = results[0],
+                coreFees = results[1],
+                dynamicObjects = results[2];
             /*
              * If one of the desired fee assets has an invalid core exchange rate
              * get_required_signatures will fail and the result for all assets
              * will be undefined, if so we just default to coreFees
              */
+
             if (allFees === undefined) {
                 allFees = coreFees;
             }
@@ -483,10 +593,10 @@ class TransactionBuilder {
             }
 
             /* Create a map of fees and proposal fees by asset id */
-            let feesByAsset = {};
-            let proposalFeesByAsset = {};
-            allFees.forEach(feeSet => {
-                let filteredFeeSet = feeSet.map(f => {
+            var feesByAsset = {};
+            var proposalFeesByAsset = {};
+            allFees.forEach(function(feeSet) {
+                var filteredFeeSet = feeSet.map(function(f) {
                     if (Array.isArray(f)) {
                         // This operation includes a proposal
                         proposalFeesByAsset[f[1][0].asset_id] = f[1];
@@ -494,21 +604,21 @@ class TransactionBuilder {
                     }
                     return f;
                 });
-                let currentAssetId = filteredFeeSet[0].asset_id;
+                var currentAssetId = filteredFeeSet[0].asset_id;
 
                 feesByAsset[currentAssetId] = filteredFeeSet;
             }, {});
 
             /* Create a map of fee pools by asset id*/
-            let feePoolMap = !!dynamicObjects
-                ? dynamicObjects.reduce((map, object) => {
+            var feePoolMap = !!dynamicObjects
+                ? dynamicObjects.reduce(function(map, object) {
                       map[object.id.replace(/^2\./, "1.")] = object;
                       return map;
                   }, {})
                 : {};
 
-            let feeMap = {};
-            let proposalFeeMap = {};
+            var feeMap = {};
+            var proposalFeeMap = {};
             function updateFeeMap(map, asset_id, opIndex, core_fees) {
                 if (!map[asset_id]) map[asset_id] = {total: 0, ops: []};
                 if (map[asset_id].propIdx) map[asset_id].propIdx.push(opIndex);
@@ -522,57 +632,69 @@ class TransactionBuilder {
                 return map;
             }
 
-            for (let i = 0; i < operations.length; i++) {
-                let op = operations[i];
-                let feeAssetId = op[1].fee.asset_id;
+            var _loop = function _loop(_i3) {
+                var op = operations[_i3];
+                var feeAssetId = op[1].fee.asset_id;
 
                 if (isProposal(op)) {
                     feeMap = updateFeeMap(
                         feeMap,
                         feeAssetId,
-                        i,
-                        coreFees[i][0]
+                        _i3,
+                        coreFees[_i3][0]
                     );
 
-                    op[1].proposed_ops.forEach((prop, y) => {
-                        let propFeeAsset = prop.op[1].fee.asset_id;
-                        if (!proposalFeeMap[i]) proposalFeeMap[i] = {};
-                        if (!proposalFeeMap[i][propFeeAsset])
-                            proposalFeeMap[i][propFeeAsset] = {
+                    op[1].proposed_ops.forEach(function(prop, y) {
+                        var propFeeAsset = prop.op[1].fee.asset_id;
+                        if (!proposalFeeMap[_i3]) proposalFeeMap[_i3] = {};
+                        if (!proposalFeeMap[_i3][propFeeAsset])
+                            proposalFeeMap[_i3][propFeeAsset] = {
                                 total: 0,
-                                ops: [i],
+                                ops: [_i3],
                                 propIdx: []
                             };
 
-                        proposalFeeMap[i] = updateFeeMap(
-                            proposalFeeMap[i],
+                        proposalFeeMap[_i3] = updateFeeMap(
+                            proposalFeeMap[_i3],
                             propFeeAsset,
                             y,
-                            coreFees[i][1]
+                            coreFees[_i3][1]
                         );
                     });
                 } else {
-                    feeMap = updateFeeMap(feeMap, feeAssetId, i, coreFees[i]);
+                    feeMap = updateFeeMap(
+                        feeMap,
+                        feeAssetId,
+                        _i3,
+                        coreFees[_i3]
+                    );
                 }
+            };
+
+            for (var _i3 = 0; _i3 < operations.length; _i3++) {
+                _loop(_i3);
             }
 
             /* Check fee pool balances for regular ops */
             function checkPoolBalance(feeMap) {
                 if (!Object.keys(feeMap).length) return [];
-                let final_fees = [];
-                for (let asset in feeMap) {
-                    let feePoolBalance = feePoolMap[asset]
+                var final_fees = [];
+
+                var _loop2 = function _loop2(asset) {
+                    var feePoolBalance = feePoolMap[asset]
                         ? parseInt(feePoolMap[asset].fee_pool, 10)
                         : 0;
                     /* Fee pool balance insufficient, default to core*/
                     if (feeMap[asset].total > feePoolBalance) {
-                        feeMap[asset].ops.forEach(opIndex => {
+                        feeMap[asset].ops.forEach(function(opIndex) {
                             if (
                                 coreFees[opIndex].length === 2 &&
                                 "propIdx" in feeMap[asset]
                             ) {
                                 /* Proposal op */
-                                feeMap[asset].propIdx.forEach(prop_idx => {
+                                feeMap[asset].propIdx.forEach(function(
+                                    prop_idx
+                                ) {
                                     final_fees[prop_idx] =
                                         coreFees[opIndex][1][prop_idx];
                                 });
@@ -584,12 +706,14 @@ class TransactionBuilder {
                         });
                         /* Use the desired fee asset */
                     } else {
-                        feeMap[asset].ops.forEach(opIndex => {
+                        feeMap[asset].ops.forEach(function(opIndex) {
                             if (
                                 coreFees[opIndex].length === 2 &&
                                 "propIdx" in feeMap[asset]
                             ) {
-                                feeMap[asset].propIdx.forEach(prop_idx => {
+                                feeMap[asset].propIdx.forEach(function(
+                                    prop_idx
+                                ) {
                                     final_fees[prop_idx] =
                                         proposalFeesByAsset[asset][prop_idx];
                                 });
@@ -599,18 +723,24 @@ class TransactionBuilder {
                             }
                         });
                     }
+                };
+
+                for (var asset in feeMap) {
+                    _loop2(asset);
                 }
                 return final_fees;
             }
 
-            let finalFees = checkPoolBalance(feeMap);
+            var finalFees = checkPoolBalance(feeMap);
 
-            let finalProposalFees = {};
-            for (let key in proposalFeeMap) {
-                finalProposalFees[key] = checkPoolBalance(proposalFeeMap[key]);
+            var finalProposalFees = {};
+            for (var _key in proposalFeeMap) {
+                finalProposalFees[_key] = checkPoolBalance(
+                    proposalFeeMap[_key]
+                );
             }
 
-            let set_fee = (operation, opIndex) => {
+            var set_fee = function set_fee(operation, opIndex) {
                 if (
                     !operation.fee ||
                     operation.fee.amount === 0 ||
@@ -618,11 +748,11 @@ class TransactionBuilder {
                         operation.fee.amount.toString() === "0") // Long
                 ) {
                     if (removeDuplicates) {
-                        let op = ops.operation.toObject(
-                            this.operations[opIndex]
+                        var _op = ops.operation.toObject(
+                            _this3.operations[opIndex]
                         );
-                        let originalIndex = getDuplicateOriginalIndex(
-                            op,
+                        var originalIndex = getDuplicateOriginalIndex(
+                            _op,
                             opIndex
                         );
                         if (originalIndex >= 0) {
@@ -636,14 +766,14 @@ class TransactionBuilder {
                     }
                 }
                 if (operation.proposed_ops) {
-                    let result = [];
+                    var result = [];
                     /*
                      * Loop over proposed_ops and assign fee asset ids as
                      * determined by the fee pool balance check. If the balance
                      * is sufficient the asset_id is kept, if not it defaults to
                      * "1.3.0"
                      */
-                    for (let y = 0; y < operation.proposed_ops.length; y++) {
+                    for (var y = 0; y < operation.proposed_ops.length; y++) {
                         operation.proposed_ops[y].op[1].fee.asset_id =
                             finalProposalFees[opIndex][y].asset_id;
                         operation.proposed_ops[y].op[1].fee.amount =
@@ -654,14 +784,14 @@ class TransactionBuilder {
                 }
             };
             /* We apply the final fees the the operations */
-            for (let i = 0; i < this.operations.length; i++) {
-                set_fee(this.operations[i][1], i);
+            for (var _i4 = 0; _i4 < _this3.operations.length; _i4++) {
+                set_fee(_this3.operations[_i4][1], _i4);
             }
         });
         //DEBUG console.log('... get_required_fees',operations,asset_id,flat_fees)
-    }
+    };
 
-    get_potential_signatures() {
+    TransactionBuilder.prototype.get_potential_signatures = function get_potential_signatures() {
         var tr_object = ops.signed_transaction.toObject(this);
         return Promise.all([
             Apis.instance()
@@ -673,9 +803,11 @@ class TransactionBuilder {
         ]).then(function(results) {
             return {pubkeys: results[0], addys: results[1]};
         });
-    }
+    };
 
-    get_required_signatures(available_keys) {
+    TransactionBuilder.prototype.get_required_signatures = function get_required_signatures(
+        available_keys
+    ) {
         if (!available_keys.length) {
             return Promise.resolve([]);
         }
@@ -688,9 +820,14 @@ class TransactionBuilder {
                 //DEBUG console.log('... get_required_signatures',required_public_keys)
                 return required_public_keys;
             });
-    }
+    };
 
-    add_signer(private_key, public_key = private_key.toPublicKey()) {
+    TransactionBuilder.prototype.add_signer = function add_signer(private_key) {
+        var public_key =
+            arguments.length > 1 && arguments[1] !== undefined
+                ? arguments[1]
+                : private_key.toPublicKey();
+
         assert(private_key.d, "required PrivateKey object");
 
         if (this.signed) {
@@ -700,14 +837,41 @@ class TransactionBuilder {
             public_key = PublicKey.fromPublicKeyString(public_key);
         }
         // prevent duplicates
-        let spHex = private_key.toHex();
-        for (let sp of this.signer_private_keys) {
+        var spHex = private_key.toHex();
+        for (
+            var _iterator3 = this.signer_private_keys,
+                _isArray3 = Array.isArray(_iterator3),
+                _i5 = 0,
+                _iterator3 = _isArray3
+                    ? _iterator3
+                    : _iterator3[Symbol.iterator]();
+            ;
+
+        ) {
+            var _ref4;
+
+            if (_isArray3) {
+                if (_i5 >= _iterator3.length) break;
+                _ref4 = _iterator3[_i5++];
+            } else {
+                _i5 = _iterator3.next();
+                if (_i5.done) break;
+                _ref4 = _i5.value;
+            }
+
+            var sp = _ref4;
+
             if (sp[0].toHex() === spHex) return;
         }
         this.signer_private_keys.push([private_key, public_key]);
-    }
+    };
 
-    sign(chain_id = Apis.instance().chain_id) {
+    TransactionBuilder.prototype.sign = function sign() {
+        var chain_id =
+            arguments.length > 0 && arguments[0] !== undefined
+                ? arguments[0]
+                : Apis.instance().chain_id;
+
         if (!this.tr_buffer) {
             throw new Error("not finalized");
         }
@@ -721,7 +885,10 @@ class TransactionBuilder {
         }
         var end = this.signer_private_keys.length;
         for (var i = 0; 0 < end ? i < end : i > end; 0 < end ? i++ : i++) {
-            var [private_key, public_key] = this.signer_private_keys[i];
+            var _signer_private_keys$ = this.signer_private_keys[i],
+                private_key = _signer_private_keys$[0],
+                public_key = _signer_private_keys$[1];
+
             var sig = Signature.signBuffer(
                 Buffer.concat([new Buffer(chain_id, "hex"), this.tr_buffer]),
                 private_key,
@@ -732,28 +899,34 @@ class TransactionBuilder {
         this.signer_private_keys = [];
         this.signed = true;
         return;
-    }
+    };
 
-    serialize() {
+    TransactionBuilder.prototype.serialize = function serialize() {
         return ops.signed_transaction.toObject(this);
-    }
+    };
 
-    toObject() {
+    TransactionBuilder.prototype.toObject = function toObject() {
         return ops.signed_transaction.toObject(this);
-    }
+    };
 
-    broadcast(was_broadcast_callback) {
+    TransactionBuilder.prototype.broadcast = function broadcast(
+        was_broadcast_callback
+    ) {
+        var _this4 = this;
+
         if (this.tr_buffer) {
             return this._broadcast(was_broadcast_callback);
         } else {
-            return this.finalize().then(() => {
-                return this._broadcast(was_broadcast_callback);
+            return this.finalize().then(function() {
+                return _this4._broadcast(was_broadcast_callback);
             });
         }
-    }
-}
+    };
 
-var base_expiration_sec = () => {
+    return TransactionBuilder;
+})();
+
+var base_expiration_sec = function base_expiration_sec() {
     var head_block_sec = Math.ceil(getHeadBlockDate().getTime() / 1000);
     var now_sec = Math.ceil(Date.now() / 1000);
     // The head block time should be updated every 3 seconds.  If it isn't
@@ -766,21 +939,23 @@ var base_expiration_sec = () => {
 };
 
 function _broadcast(was_broadcast_callback) {
-    return new Promise((resolve, reject) => {
-        if (!this.signed) {
-            this.sign();
+    var _this5 = this;
+
+    return new Promise(function(resolve, reject) {
+        if (!_this5.signed) {
+            _this5.sign();
         }
-        if (!this.tr_buffer) {
+        if (!_this5.tr_buffer) {
             throw new Error("not finalized");
         }
-        if (!this.signatures.length) {
+        if (!_this5.signatures.length) {
             throw new Error("not signed");
         }
-        if (!this.operations.length) {
+        if (!_this5.operations.length) {
             throw new Error("no operations");
         }
 
-        var tr_object = ops.signed_transaction.toObject(this);
+        var tr_object = ops.signed_transaction.toObject(_this5);
         // console.log('... broadcast_transaction_with_callback !!!')
         Apis.instance()
             .network_api()
@@ -795,7 +970,7 @@ function _broadcast(was_broadcast_callback) {
                 if (was_broadcast_callback) was_broadcast_callback();
                 return;
             })
-            .catch(error => {
+            .catch(function(error) {
                 // console.log may be redundant for network errors, other errors could occur
                 console.log(error);
                 var message = error.message;
@@ -808,9 +983,9 @@ function _broadcast(was_broadcast_callback) {
                             "\n" +
                             "bitshares-crypto " +
                             " digest " +
-                            hash.sha256(this.tr_buffer).toString("hex") +
+                            hash.sha256(_this5.tr_buffer).toString("hex") +
                             " transaction " +
-                            this.tr_buffer.toString("hex") +
+                            _this5.tr_buffer.toString("hex") +
                             " " +
                             JSON.stringify(tr_object)
                     )
